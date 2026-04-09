@@ -34,15 +34,16 @@ body {
   opacity: 0;
   left: 50%;
   top: 50%;
+  transform-origin: center center;
   transform: translate(-50%, -50%) scale(0.5);
-  transition: all 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: all 1.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 </style>
 </head>
 <body>
 
 <script>
-// 点开直接全屏
+// 打开直接全屏
 (async function autoFull() {
   try {
     const d = document.documentElement;
@@ -64,16 +65,15 @@ const colors = [
   "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#bdb2ff"
 ];
 
-// 更大、更均匀的爱心轮廓
+// 爱心更大、更均匀
 function getHeartList(count) {
   let list = [];
   for (let i = 0; i < count; i++) {
     let t = Math.random() * Math.PI * 2;
     let x = 16 * Math.pow(Math.sin(t), 3);
     let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-    list.push({ x: x * 18, y: y * 18 }); // 放大爱心
+    list.push({ x: x * 24, y: y * 24 });
   }
-  // 按距离中心排序，从内向外流动出现
   list.sort((a, b) => Math.hypot(a.x, a.y) - Math.hypot(b.x, b.y));
   return list;
 }
@@ -84,11 +84,11 @@ function rand(arr) {
 
 const cx = window.innerWidth / 2;
 const cy = window.innerHeight / 2;
-const total = 70;
+const total = 100;
 const points = getHeartList(total);
 const notes = [];
 
-// 1. 从中心流动依次拼成爱心（3秒左右）
+// 1. 从中心流动组成爱心
 for (let i = 0; i < total; i++) {
   const div = document.createElement("div");
   div.classList.add("note");
@@ -102,52 +102,61 @@ for (let i = 0; i < total; i++) {
     div.style.transform = "translate(-50%, -50%) scale(1)";
     div.style.left = cx + points[i].x + "px";
     div.style.top = cy + points[i].y + "px";
-  }, i * 40);
+  }, i * 35);
 }
 
-// 2. 心跳跳动 2 次
+// 2. 放慢速度的心跳 2 次
 setTimeout(() => {
   notes.forEach(n => {
-    n.style.transition = "transform 0.3s ease-in-out";
-    n.style.transform = "translate(-50%, -50%) scale(1.15)";
+    n.style.transition = "transform 0.5s ease-in-out";
+    n.style.transform = "translate(-50%, -50%) scale(1.12)";
     setTimeout(() => {
       n.style.transform = "translate(-50%, -50%) scale(1)";
       setTimeout(() => {
-        n.style.transform = "translate(-50%, -50%) scale(1.15)";
+        n.style.transform = "translate(-50%, -50%) scale(1.12)";
         setTimeout(() => {
           n.style.transform = "translate(-50%, -50%) scale(1)";
-          // 跳完恢复顺滑动画
-          setTimeout(() => {
-            n.style.transition = "all 1.9s cubic-bezier(0.22,1,0.36,1)";
-          }, 300);
-        }, 300);
-      }, 300);
-    }, 300);
+        }, 500);
+      }, 500);
+    }, 500);
   });
 
-  // 3. 心跳结束 → 流动散开铺满全屏
+  // 3. 心跳结束 → 流动散开
   setTimeout(() => {
     notes.forEach(n => {
-      n.style.left = (60 + Math.random() * (window.innerWidth - 120)) + "px";
-      n.style.top = (60 + Math.random() * (window.innerHeight - 120)) + "px";
+      n.style.transition = "all 2.2s cubic-bezier(0.22,1,0.36,1)";
+      n.style.left = 60 + Math.random() * (window.innerWidth - 120) + "px";
+      n.style.top = 60 + Math.random() * (window.innerHeight - 120) + "px";
     });
 
-    // 额外再补一批便签更饱满
+    // 4. 散开后持续缓慢运动
     setTimeout(() => {
-      for (let i = 0; i < 40; i++) {
-        const d = document.createElement("div");
-        d.classList.add("note");
-        d.style.background = rand(colors);
-        d.innerText = rand(texts);
-        d.style.opacity = 1;
-        d.style.left = 60 + Math.random() * (window.innerWidth - 120) + "px";
-        d.style.top = 60 + Math.random() * (window.innerHeight - 120) + "px";
-        d.style.transform = "translate(-50%, -50%) scale(1)";
-        document.body.appendChild(d);
-      }
-    }, 1200);
-  }, 1500);
-}, 3000);
+      notes.forEach((n, i) => {
+        n.style.transition = "none";
+        let baseX = parseFloat(n.style.left);
+        let baseY = parseFloat(n.style.top);
+        let angle = 0;
+
+        function loop() {
+          angle += 0.008;
+          if (i % 2 === 0) {
+            // 圆周运动
+            let dx = Math.cos(angle) * 14;
+            let dy = Math.sin(angle) * 14;
+            n.style.left = baseX + dx + "px";
+            n.style.top = baseY + dy + "px";
+          } else {
+            // 半圆摆动
+            let dx = Math.cos(angle) * 10;
+            n.style.left = baseX + dx + "px";
+          }
+          requestAnimationFrame(loop);
+        }
+        loop();
+      });
+    }, 2300);
+  }, 2200);
+}, 3500);
 </script>
 </body>
 </html>
