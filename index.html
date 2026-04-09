@@ -32,25 +32,26 @@ body {
   color: #222;
   z-index: 10;
   opacity: 0;
+  left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%) scale(0.5);
-  transition: all 1.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 1.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 </style>
 </head>
 <body>
 
 <script>
-// 自动全屏
-(async () => {
+// 点开直接全屏
+(async function autoFull() {
   try {
-    const el = document.documentElement;
-    if (el.requestFullscreen) await el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-    else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+    const d = document.documentElement;
+    if (d.requestFullscreen) await d.requestFullscreen();
+    else if (d.webkitRequestFullscreen) await d.webkitRequestFullscreen();
+    else if (d.msRequestFullscreen) await d.msRequestFullscreen();
   } catch (e) {}
 })();
 
-// 文案（已删除我想你了 → 改为 天天开心）
 const texts = [
   "好好吃饭", "别熬夜", "天天开心", "照顾好自己",
   "要开心呀", "万事顺意", "平安喜乐", "岁岁无忧",
@@ -63,18 +64,18 @@ const colors = [
   "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#bdb2ff"
 ];
 
-// 爱心数学坐标（真正3D爱心形状）
-function heartPoints(count) {
-  let pts = [];
+// 更大、更均匀的爱心轮廓
+function getHeartList(count) {
+  let list = [];
   for (let i = 0; i < count; i++) {
-    const a = Math.random() * Math.PI * 2;
-    const x = 16 * Math.pow(Math.sin(a), 3);
-    const y = -(13 * Math.cos(a) - 5 * Math.cos(2*a) - 2 * Math.cos(3*a) - Math.cos(4*a));
-    pts.push({ x: x * 11, y: y * 11 });
+    let t = Math.random() * Math.PI * 2;
+    let x = 16 * Math.pow(Math.sin(t), 3);
+    let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+    list.push({ x: x * 18, y: y * 18 }); // 放大爱心
   }
-  // 按距离中心排序 → 实现从内向外流动出现
-  pts.sort((a, b) => Math.hypot(a.x,a.y) - Math.hypot(b.x,b.y));
-  return pts;
+  // 按距离中心排序，从内向外流动出现
+  list.sort((a, b) => Math.hypot(a.x, a.y) - Math.hypot(b.x, b.y));
+  return list;
 }
 
 function rand(arr) {
@@ -83,54 +84,70 @@ function rand(arr) {
 
 const cx = window.innerWidth / 2;
 const cy = window.innerHeight / 2;
-const total = 60;
-const points = heartPoints(total);
+const total = 70;
+const points = getHeartList(total);
 const notes = [];
 
-// 1. 从爱心中心流动依次出现（3秒流畅展开）
+// 1. 从中心流动依次拼成爱心（3秒左右）
 for (let i = 0; i < total; i++) {
   const div = document.createElement("div");
   div.classList.add("note");
   div.style.background = rand(colors);
   div.innerText = rand(texts);
-  div.style.left = cx + "px";
-  div.style.top = cy + "px";
   document.body.appendChild(div);
   notes.push(div);
 
-  // 依次流动出现，从中心向外扩散
   setTimeout(() => {
     div.style.opacity = 1;
     div.style.transform = "translate(-50%, -50%) scale(1)";
     div.style.left = cx + points[i].x + "px";
     div.style.top = cy + points[i].y + "px";
-  }, i * 50); // 总流动约 3秒
+  }, i * 40);
 }
 
-// 2. 保持爱心形态 4秒
-// 3. 流动式散开铺满屏幕（极度顺滑）
+// 2. 心跳跳动 2 次
 setTimeout(() => {
-  notes.forEach((div) => {
-    div.style.left = (60 + Math.random() * (window.innerWidth - 120)) + "px";
-    div.style.top = (60 + Math.random() * (window.innerHeight - 120)) + "px";
-    div.style.transform = "translate(-50%, -50%) scale(1)";
+  notes.forEach(n => {
+    n.style.transition = "transform 0.3s ease-in-out";
+    n.style.transform = "translate(-50%, -50%) scale(1.15)";
+    setTimeout(() => {
+      n.style.transform = "translate(-50%, -50%) scale(1)";
+      setTimeout(() => {
+        n.style.transform = "translate(-50%, -50%) scale(1.15)";
+        setTimeout(() => {
+          n.style.transform = "translate(-50%, -50%) scale(1)";
+          // 跳完恢复顺滑动画
+          setTimeout(() => {
+            n.style.transition = "all 1.9s cubic-bezier(0.22,1,0.36,1)";
+          }, 300);
+        }, 300);
+      }, 300);
+    }, 300);
   });
 
-  // 4. 散开后追加更多便签
+  // 3. 心跳结束 → 流动散开铺满全屏
   setTimeout(() => {
-    for (let i = 0; i < 40; i++) {
-      const d = document.createElement("div");
-      d.classList.add("note");
-      d.style.background = rand(colors);
-      d.innerText = rand(texts);
-      d.style.left = 60 + Math.random() * (window.innerWidth - 120) + "px";
-      d.style.top = 60 + Math.random() * (window.innerHeight - 120) + "px";
-      d.style.opacity = 1;
-      d.style.transform = "translate(-50%, -50%) scale(1)";
-      document.body.appendChild(d);
-    }
+    notes.forEach(n => {
+      n.style.left = (60 + Math.random() * (window.innerWidth - 120)) + "px";
+      n.style.top = (60 + Math.random() * (window.innerHeight - 120)) + "px";
+    });
+
+    // 额外再补一批便签更饱满
+    setTimeout(() => {
+      for (let i = 0; i < 40; i++) {
+        const d = document.createElement("div");
+        d.classList.add("note");
+        d.style.background = rand(colors);
+        d.innerText = rand(texts);
+        d.style.opacity = 1;
+        d.style.left = 60 + Math.random() * (window.innerWidth - 120) + "px";
+        d.style.top = 60 + Math.random() * (window.innerHeight - 120) + "px";
+        d.style.transform = "translate(-50%, -50%) scale(1)";
+        document.body.appendChild(d);
+      }
+    }, 1200);
   }, 1500);
-}, 7000);
+}, 3000);
 </script>
 </body>
 </html>
