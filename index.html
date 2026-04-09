@@ -5,124 +5,132 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>520爱心便签</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{
-  background:#000;
-  overflow:hidden;
-  height:100vh;
-  font-family:sans-serif;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
-.note{
-  position:absolute;
-  padding:12px 10px;
-  border-radius:8px;
-  width:110px;
-  min-height:90px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.3);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  font-size:14px;
-  font-weight:bold;
-  color:#222;
-  z-index:10;
-  transition:all 1.8s cubic-bezier(0.22, 1, 0.36, 1);
-  transform: translate(-50%, -50%) scale(0);
+body {
+  background: #000;
+  overflow: hidden;
+  height: 100vh;
+  font-family: sans-serif;
 }
-.note.show{
-  transform: translate(-50%, -50%) scale(1);
+.note {
+  position: absolute;
+  padding: 12px 10px;
+  border-radius: 8px;
+  width: 110px;
+  min-height: 90px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  color: #222;
+  z-index: 10;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.5);
+  transition: all 1.7s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 </style>
 </head>
 <body>
 
 <script>
-// 进入页面自动全屏
-(async function autoFull(){
-  try{
-    const d=document.documentElement;
-    if(d.requestFullscreen)await d.requestFullscreen();
-    else if(d.webkitRequestFullscreen)await d.webkitRequestFullscreen();
-    else if(d.msRequestFullscreen)await d.msRequestFullscreen();
-  }catch(e){}
+// 自动全屏
+(async () => {
+  try {
+    const el = document.documentElement;
+    if (el.requestFullscreen) await el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+    else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+  } catch (e) {}
 })();
 
-// 文案与颜色
+// 文案（已删除我想你了 → 改为 天天开心）
 const texts = [
-  "好好吃饭","别熬夜","我想你了","照顾好自己",
-  "要开心呀","万事顺意","平安喜乐","岁岁无忧",
-  "记得微笑","少点烦恼","保持热爱","永远幸福",
-  "岁岁平安","万事胜意","温柔以待","不负遇见"
-];
-const colors = [
-  "#ffd166","#06d6a0","#118ab2","#ef476f","#ffadad",
-  "#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#bdb2ff"
+  "好好吃饭", "别熬夜", "天天开心", "照顾好自己",
+  "要开心呀", "万事顺意", "平安喜乐", "岁岁无忧",
+  "记得微笑", "少点烦恼", "保持热爱", "永远幸福",
+  "岁岁平安", "万事胜意", "温柔以待", "不负遇见"
 ];
 
-// 爱心轮廓坐标生成（修复版，真正聚成爱心）
-function getHeartPoints(count){
-  let arr=[];
-  for(let i=0;i<count;i++){
-    let angle = Math.random() * Math.PI * 2;
-    let s = Math.sqrt(Math.random());
-    let x = 16 * Math.pow(Math.sin(angle),3);
-    let y = -(13*Math.cos(angle)-5*Math.cos(2*angle)-2*Math.cos(3*angle)-Math.cos(4*angle));
-    arr.push({x:x*11, y:y*11});
+const colors = [
+  "#ffd166", "#06d6a0", "#118ab2", "#ef476f", "#ffadad",
+  "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#bdb2ff"
+];
+
+// 爱心数学坐标（真正3D爱心形状）
+function heartPoints(count) {
+  let pts = [];
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const x = 16 * Math.pow(Math.sin(a), 3);
+    const y = -(13 * Math.cos(a) - 5 * Math.cos(2*a) - 2 * Math.cos(3*a) - Math.cos(4*a));
+    pts.push({ x: x * 11, y: y * 11 });
   }
-  return arr;
+  // 按距离中心排序 → 实现从内向外流动出现
+  pts.sort((a, b) => Math.hypot(a.x,a.y) - Math.hypot(b.x,b.y));
+  return pts;
 }
 
-function rand(min,max){return Math.random()*(max-min)+min}
-function randText(){return texts[Math.floor(Math.random()*texts.length)]}
-function randColor(){return colors[Math.floor(Math.random()*colors.length)]}
+function rand(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
-const cx = window.innerWidth/2;
-const cy = window.innerHeight/2;
+const cx = window.innerWidth / 2;
+const cy = window.innerHeight / 2;
+const total = 60;
+const points = heartPoints(total);
+const notes = [];
 
-// 1. 先创建爱心主体便签
-const heartCount = 60;
-const points = getHeartPoints(heartCount);
-let notes = [];
-
-for(let i=0;i<heartCount;i++){
-  let div=document.createElement("div");
+// 1. 从爱心中心流动依次出现（3秒流畅展开）
+for (let i = 0; i < total; i++) {
+  const div = document.createElement("div");
   div.classList.add("note");
-  div.style.background=randColor();
-  div.innerText=randText();
-  div.style.left=cx+"px";
-  div.style.top=cy+"px";
+  div.style.background = rand(colors);
+  div.innerText = rand(texts);
+  div.style.left = cx + "px";
+  div.style.top = cy + "px";
   document.body.appendChild(div);
   notes.push(div);
 
-  // 定位到爱心形状
-  setTimeout(()=>{
-    div.classList.add("show");
+  // 依次流动出现，从中心向外扩散
+  setTimeout(() => {
+    div.style.opacity = 1;
+    div.style.transform = "translate(-50%, -50%) scale(1)";
     div.style.left = cx + points[i].x + "px";
     div.style.top = cy + points[i].y + "px";
-  },50);
+  }, i * 50); // 总流动约 3秒
 }
 
-// 2. 保持爱心4秒后开始散开
-setTimeout(()=>{
-  notes.forEach(div=>{
-    div.style.left=rand(60,window.innerWidth-60)+"px";
-    div.style.top=rand(60,window.innerHeight-60)+"px";
+// 2. 保持爱心形态 4秒
+// 3. 流动式散开铺满屏幕（极度顺滑）
+setTimeout(() => {
+  notes.forEach((div) => {
+    div.style.left = (60 + Math.random() * (window.innerWidth - 120)) + "px";
+    div.style.top = (60 + Math.random() * (window.innerHeight - 120)) + "px";
+    div.style.transform = "translate(-50%, -50%) scale(1)";
   });
 
-  // 3. 散开后再追加一批便签（数量变更多）
-  setTimeout(()=>{
-    for(let i=0;i<40;i++){
-      let d=document.createElement("div");
-      d.classList.add("note","show");
-      d.style.background=randColor();
-      d.innerText=randText();
-      d.style.left=rand(60,window.innerWidth-60)+"px";
-      d.style.top=rand(60,window.innerHeight-60)+"px";
+  // 4. 散开后追加更多便签
+  setTimeout(() => {
+    for (let i = 0; i < 40; i++) {
+      const d = document.createElement("div");
+      d.classList.add("note");
+      d.style.background = rand(colors);
+      d.innerText = rand(texts);
+      d.style.left = 60 + Math.random() * (window.innerWidth - 120) + "px";
+      d.style.top = 60 + Math.random() * (window.innerHeight - 120) + "px";
+      d.style.opacity = 1;
+      d.style.transform = "translate(-50%, -50%) scale(1)";
       document.body.appendChild(d);
     }
-  },1200);
-},4000);
+  }, 1500);
+}, 7000);
 </script>
 </body>
 </html>
