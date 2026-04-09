@@ -7,24 +7,11 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
-  background:#0d1117;
+  background:#000;
   color:#ccc;
   font-family:system-ui,sans-serif;
   overflow:hidden;
   height:100vh;
-}
-
-.code-bg{
-  position:fixed;
-  top:0;left:0;right:0;bottom:0;
-  padding:20px;
-  font-family:monospace;
-  font-size:12px;
-  line-height:1.6;
-  color:#8b949e;
-  white-space:pre;
-  opacity:0.3;
-  z-index:1;
 }
 
 .note{
@@ -63,46 +50,15 @@ body{
 </head>
 <body>
 
-<div class="code-bg">
-function love() {
-  let care = true
-  while(alive) {
-    missYou()
-    takeCare()
-    sleepEarly()
-    eatWell()
-  }
-}
-
-async function sendWishes() {
-  for(let wish of wishes) {
-    await showNote(wish)
-    await delay(300)
-  }
-}
-
-const wishes = [
-  "好好吃饭",
-  "别熬夜",
-  "我想你了",
-  "照顾好自己",
-  "要开心呀",
-  "万事顺意",
-  "平安喜乐",
-  "岁岁无忧"
-]
-</div>
-
 <script>
-// 自动全屏（点击页面触发）
+// 点击全屏
 function enterFullScreen() {
   const el = document.documentElement;
   if (el.requestFullscreen) el.requestFullscreen();
   else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
   else if (el.msRequestFullscreen) el.msRequestFullscreen();
 }
-// 页面加载后，点一下任意位置就全屏
-document.addEventListener('click', enterFullscreen);
+document.addEventListener('click', enterFullScreen);
 
 const texts = [
   "好好吃饭",
