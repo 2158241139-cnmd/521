@@ -27,29 +27,28 @@ body{
   font-weight:bold;
   color:#222;
   z-index:10;
-  transition:all 1.4s cubic-bezier(0.33, 0, 0.18, 1);
-  transform:scale(0) translate(0,0) rotate(0deg);
+  transition:all 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate(-50%, -50%) scale(0);
 }
 .note.show{
-  transform:scale(1) rotate(var(--r,0deg));
+  transform: translate(-50%, -50%) scale(1);
 }
 </style>
 </head>
 <body>
 
 <script>
-// 自动全屏
-async function autoFullScreen() {
-  try {
-    const el = document.documentElement;
-    if (el.requestFullscreen) await el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-    else if (el.msRequestFullscreen) await el.msRequestFullscreen();
-  } catch (e) {}
-}
-autoFullScreen();
+// 进入页面自动全屏
+(async function autoFull(){
+  try{
+    const d=document.documentElement;
+    if(d.requestFullscreen)await d.requestFullscreen();
+    else if(d.webkitRequestFullscreen)await d.webkitRequestFullscreen();
+    else if(d.msRequestFullscreen)await d.msRequestFullscreen();
+  }catch(e){}
+})();
 
-// 文案 & 颜色
+// 文案与颜色
 const texts = [
   "好好吃饭","别熬夜","我想你了","照顾好自己",
   "要开心呀","万事顺意","平安喜乐","岁岁无忧",
@@ -61,59 +60,69 @@ const colors = [
   "#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#bdb2ff"
 ];
 
-// 爱心坐标（3D爱心形状）
-function heartPoints(count) {
-  let points = [];
-  for (let i = 0; i < count; i++) {
-    const t = Math.random() * Math.PI * 2;
-    const r = Math.random();
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
-    points.push({ x: x*12, y: -y*12 });
+// 爱心轮廓坐标生成（修复版，真正聚成爱心）
+function getHeartPoints(count){
+  let arr=[];
+  for(let i=0;i<count;i++){
+    let angle = Math.random() * Math.PI * 2;
+    let s = Math.sqrt(Math.random());
+    let x = 16 * Math.pow(Math.sin(angle),3);
+    let y = -(13*Math.cos(angle)-5*Math.cos(2*angle)-2*Math.cos(3*angle)-Math.cos(4*angle));
+    arr.push({x:x*11, y:y*11});
   }
-  return points;
+  return arr;
 }
 
-// 随机数
 function rand(min,max){return Math.random()*(max-min)+min}
+function randText(){return texts[Math.floor(Math.random()*texts.length)]}
+function randColor(){return colors[Math.floor(Math.random()*colors.length)]}
 
-// 创建便签
-function createNotes() {
-  const total = 80; // 大量便签
-  const heart = heartPoints(total);
-  const cx = window.innerWidth/2;
-  const cy = window.innerHeight/2;
+const cx = window.innerWidth/2;
+const cy = window.innerHeight/2;
 
-  for (let i = 0; i < total; i++) {
-    const div = document.createElement("div");
-    div.classList.add("note");
-    div.style.background = colors[Math.floor(rand(0,colors.length))];
-    div.style.setProperty("--r", rand(-8,8)+"deg");
+// 1. 先创建爱心主体便签
+const heartCount = 60;
+const points = getHeartPoints(heartCount);
+let notes = [];
 
-    // 初始位置：聚成爱心
-    div.style.left = cx + heart[i].x + "px";
-    div.style.top = cy + heart[i].y + "px";
-    div.innerText = "❔";
-    document.body.appendChild(div);
+for(let i=0;i<heartCount;i++){
+  let div=document.createElement("div");
+  div.classList.add("note");
+  div.style.background=randColor();
+  div.innerText=randText();
+  div.style.left=cx+"px";
+  div.style.top=cy+"px";
+  document.body.appendChild(div);
+  notes.push(div);
 
-    // 显示
-    setTimeout(() => div.classList.add("show"), 50);
-
-    // 10秒整体动画：散开
-    setTimeout(() => {
-      div.style.left = rand(5, window.innerWidth-120)+"px";
-      div.style.top = rand(10, window.innerHeight-100)+"px";
-    }, 4000);
-
-    // 变文字
-    setTimeout(() => {
-      div.innerText = texts[Math.floor(rand(0,texts.length))];
-    }, 7000);
-  }
+  // 定位到爱心形状
+  setTimeout(()=>{
+    div.classList.add("show");
+    div.style.left = cx + points[i].x + "px";
+    div.style.top = cy + points[i].y + "px";
+  },50);
 }
 
-// 开始
-createNotes();
+// 2. 保持爱心4秒后开始散开
+setTimeout(()=>{
+  notes.forEach(div=>{
+    div.style.left=rand(60,window.innerWidth-60)+"px";
+    div.style.top=rand(60,window.innerHeight-60)+"px";
+  });
+
+  // 3. 散开后再追加一批便签（数量变更多）
+  setTimeout(()=>{
+    for(let i=0;i<40;i++){
+      let d=document.createElement("div");
+      d.classList.add("note","show");
+      d.style.background=randColor();
+      d.innerText=randText();
+      d.style.left=rand(60,window.innerWidth-60)+"px";
+      d.style.top=rand(60,window.innerHeight-60)+"px";
+      document.body.appendChild(d);
+    }
+  },1200);
+},4000);
 </script>
 </body>
 </html>
